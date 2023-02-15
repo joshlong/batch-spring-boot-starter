@@ -12,7 +12,7 @@ import java.lang.annotation.*;
 @Inherited
 @Documented
 @Qualifier
-public @interface ChunkRequestsChannel {
+public @interface InboundChunkChannel {
 
     @AliasFor(annotation = Qualifier.class)
     String value() default "";

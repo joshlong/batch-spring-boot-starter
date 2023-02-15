@@ -6,7 +6,6 @@ import org.springframework.batch.core.step.tasklet.TaskletStep;
 import org.springframework.batch.integration.chunk.ChunkMessageChannelItemWriter;
 import org.springframework.batch.integration.chunk.RemoteChunkHandlerFactoryBean;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -38,7 +37,7 @@ class RemoteChunkAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean
         @Qualifier("remoteChunkMessagingTemplate")
-        MessagingTemplate remoteChunkMessagingTemplate(@ChunkRequestsChannel MessageChannel channel) {
+        MessagingTemplate remoteChunkMessagingTemplate(@OutboundChunkChannel MessageChannel channel) {
             var template = new MessagingTemplate();
             template.setDefaultChannel(channel);
             template.setReceiveTimeout(2000);
@@ -70,14 +69,14 @@ class RemoteChunkAutoConfiguration {
 
         @Bean
         @ConditionalOnMissingBean
-        @ChunkRequestsChannel
+        @OutboundChunkChannel
         DirectChannel remoteChunkRequestsMessageChannel() {
             return MessageChannels.direct().get();
         }
 
         @Bean
         @ConditionalOnMissingBean
-        @ChunkRepliesChannel
+        @InboundChunkChannel
         QueueChannel remoteChunkRepliesMessageChannel() {
             return MessageChannels.queue().get();
         }
