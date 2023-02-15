@@ -7,7 +7,7 @@ import com.joshlong.batch.remotechunking.leader.InboundChunkChannel;
 import com.joshlong.batch.remotechunking.leader.OutboundChunkChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -20,6 +20,7 @@ import org.springframework.batch.item.support.ListItemReader;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.amqp.dsl.Amqp;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.messaging.MessageChannel;
@@ -85,3 +86,6 @@ public class LeaderNodeApplication {
     }
 
 }
+
+
+

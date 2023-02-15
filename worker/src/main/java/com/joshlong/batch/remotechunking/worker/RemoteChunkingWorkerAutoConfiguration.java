@@ -46,8 +46,7 @@ class RemoteChunkingWorkerAutoConfiguration {
             @ChunkItemWriter ItemWriter<Object> writer) throws Exception {
         var chunkProcessorChunkHandler = new ChunkProcessorChunkHandler<>();
         chunkProcessorChunkHandler.setChunkProcessor(new SimpleChunkProcessor<>(processor, writer));
-        chunkProcessorChunkHandler.afterPropertiesSet();
-        return new ChunkProcessorChunkHandler<>();
+        return chunkProcessorChunkHandler;
     }
 
     @Bean
@@ -73,8 +72,6 @@ class RemoteChunkingWorkerAutoConfiguration {
                 })
                 .get();
     }
-
-
 
 
 }

@@ -22,10 +22,10 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @SpringBootApplication
-public class BatchApplication {
+public class WorkerNodeApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(BatchApplication.class, args);
+        SpringApplication.run(WorkerNodeApplication.class, args);
     }
 
     @Bean
