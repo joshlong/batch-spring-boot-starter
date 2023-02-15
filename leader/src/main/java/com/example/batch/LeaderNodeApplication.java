@@ -1,39 +1,38 @@
 package com.example.batch;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.joshlong.batch.remotechunking.ChunkingItemWriter;
-import com.joshlong.batch.remotechunking.ChunkingStep;
-import com.joshlong.batch.remotechunking.InboundChunkChannel;
-import com.joshlong.batch.remotechunking.OutboundChunkChannel;
+import com.joshlong.batch.remotechunking.leader.ChunkingItemWriter;
+import com.joshlong.batch.remotechunking.leader.ChunkingStep;
+import com.joshlong.batch.remotechunking.leader.InboundChunkChannel;
+import com.joshlong.batch.remotechunking.leader.OutboundChunkChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.core.step.tasklet.TaskletStep;
-import org.springframework.batch.integration.chunk.ChunkRequest;
-import org.springframework.batch.integration.chunk.ChunkResponse;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.support.ListItemReader;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.amqp.dsl.Amqp;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.List;
 
 @RequiredArgsConstructor
 @SpringBootApplication
-public class BatchApplication {
+public class LeaderNodeApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(BatchApplication.class, args);
+        SpringApplication.run(LeaderNodeApplication.class, args);
     }
 
     private final ObjectMapper objectMapper;
@@ -55,21 +54,21 @@ public class BatchApplication {
                 .build();
     }
 
-    //todo connect this with rabbitmq or kafka or something real so i can setup a worker node
     @Bean
-    IntegrationFlow chunkIntegrationFlow(
-            @InboundChunkChannel  MessageChannel inbound,
-            @OutboundChunkChannel MessageChannel outbound) {
+    IntegrationFlow outboundIntegrationFlow(
+            @OutboundChunkChannel MessageChannel out,
+            AmqpTemplate amqpTemplate) {
+        return IntegrationFlow //
+                .from(out)
+                .handle(Amqp.outboundAdapter(amqpTemplate).routingKey("requests"))
+                .get();
+    }
+
+    @Bean
+    IntegrationFlow inboundIntegrationFlow(ConnectionFactory cf, @InboundChunkChannel MessageChannel in) {
         return IntegrationFlow
-                .from(outbound)
-                .handle(message -> {
-                    if (message.getPayload() instanceof ChunkRequest<?> chunkRequest) {
-                        var chunkResponse = new ChunkResponse(chunkRequest.getSequence(),
-                                chunkRequest.getJobId(),
-                                chunkRequest.getStepContribution());
-                        inbound.send(MessageBuilder.withPayload(chunkResponse).build());
-                    }
-                })
+                .from(Amqp.inboundAdapter(cf, "replies"))
+                .channel(in)
                 .get();
     }
 

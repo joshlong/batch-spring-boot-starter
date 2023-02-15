@@ -1,1 +1,1 @@
-com.joshlong.batch.remotechunking.RemoteChunkAutoConfiguration
+com.joshlong.batch.remotechunking.worker.RemoteChunkingWorkerAutoConfiguration

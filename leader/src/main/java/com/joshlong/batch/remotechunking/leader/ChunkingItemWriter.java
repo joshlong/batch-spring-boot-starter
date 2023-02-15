@@ -1,4 +1,4 @@
-package com.joshlong.batch.remotechunking;
+package com.joshlong.batch.remotechunking.leader;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.AliasFor;
@@ -12,7 +12,7 @@ import java.lang.annotation.*;
 @Inherited
 @Documented
 @Qualifier
-public @interface ChunkingStep {
+public @interface ChunkingItemWriter {
 
     @AliasFor(annotation = Qualifier.class)
     String value() default "";

@@ -1,33 +1,25 @@
 package com.example.batch;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.joshlong.batch.remotechunking.ChunkingItemWriter;
-import com.joshlong.batch.remotechunking.ChunkingStep;
+import com.joshlong.batch.remotechunking.ChunkItemProcessor;
+import com.joshlong.batch.remotechunking.ChunkItemWriter;
 import com.joshlong.batch.remotechunking.InboundChunkChannel;
 import com.joshlong.batch.remotechunking.OutboundChunkChannel;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
-import org.springframework.batch.core.job.builder.JobBuilder;
-import org.springframework.batch.core.repository.JobRepository;
-import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.core.step.tasklet.TaskletStep;
-import org.springframework.batch.integration.chunk.ChunkRequest;
-import org.springframework.batch.integration.chunk.ChunkResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
-import org.springframework.batch.item.support.ListItemReader;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.amqp.dsl.Amqp;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.List;
 
+@Slf4j
 @RequiredArgsConstructor
 @SpringBootApplication
 public class BatchApplication {
@@ -36,53 +28,46 @@ public class BatchApplication {
         SpringApplication.run(BatchApplication.class, args);
     }
 
-    private final ObjectMapper objectMapper;
-
-    public record Customer(String name) {
+    @Bean
+    @ChunkItemProcessor
+    ItemProcessor<Object, Object> itemProcessor() {
+        return item -> {
+            log.info("processing {}", item);
+            return item;
+        };
     }
 
     @Bean
-    @ChunkingStep
-    TaskletStep step(JobRepository repository,
-                     PlatformTransactionManager transactionManager,
-                     @ChunkingItemWriter ItemWriter<String> itemWriter) {
-        var listItemReader = new ListItemReader<>(List.of(new Customer("Dr. Syer"), new Customer("Michael"), new Customer("Mahmoud")));
-        return new StepBuilder("step", repository)
-                .<Customer, String>chunk(100, transactionManager)
-                .reader(listItemReader)
-                .processor(this::jsonFor)
-                .writer(itemWriter)
-                .build();
+    @ChunkItemWriter
+    ItemWriter<Object> itemWriter() {
+        return chunk -> {
+            //
+            log.info("doing the long-running writing thing");
+            List<?> items = chunk.getItems();
+            for (var i : items)
+                log.info("i={}", i + "");
+        };
     }
 
-    //todo connect this with rabbitmq or kafka or something real so i can setup a worker node
     @Bean
-    IntegrationFlow chunkIntegrationFlow(
-            @InboundChunkChannel  MessageChannel inbound,
-            @OutboundChunkChannel MessageChannel outbound) {
+    IntegrationFlow inboundAmqpIntegrationFlow(
+            @InboundChunkChannel MessageChannel inboundMessageChannel,
+            ConnectionFactory connectionFactory) {
         return IntegrationFlow
-                .from(outbound)
-                .handle(message -> {
-                    if (message.getPayload() instanceof ChunkRequest<?> chunkRequest) {
-                        var chunkResponse = new ChunkResponse(chunkRequest.getSequence(),
-                                chunkRequest.getJobId(),
-                                chunkRequest.getStepContribution());
-                        inbound.send(MessageBuilder.withPayload(chunkResponse).build());
-                    }
-                })
+                .from(Amqp.inboundAdapter(connectionFactory, "requests"))
+                .channel(inboundMessageChannel)
                 .get();
     }
 
     @Bean
-    Job job(JobRepository repository, Step step) {
-        return new JobBuilder("job", repository)
-                .start(step)
-                .build();
+    IntegrationFlow outboundAmqpIntegrationFlow(
+            @OutboundChunkChannel MessageChannel outboundMessageChannel,
+            AmqpTemplate template) {
+        return IntegrationFlow //
+                .from(outboundMessageChannel)
+                .handle(Amqp.outboundAdapter(template).routingKey("replies"))
+                .get();
     }
 
-    @SneakyThrows
-    private String jsonFor(Object o) {
-        return objectMapper.writeValueAsString(o);
-    }
 
 }
