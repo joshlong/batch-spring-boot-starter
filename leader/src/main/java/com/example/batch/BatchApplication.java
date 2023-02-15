@@ -17,6 +17,7 @@ import org.springframework.batch.integration.chunk.ChunkRequest;
 import org.springframework.batch.integration.chunk.ChunkResponse;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.support.ListItemReader;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -57,8 +58,8 @@ public class BatchApplication {
     //todo connect this with rabbitmq or kafka or something real so i can setup a worker node
     @Bean
     IntegrationFlow chunkIntegrationFlow(
-            @OutboundChunkChannel MessageChannel outbound,
-            @InboundChunkChannel MessageChannel inbound) {
+            @InboundChunkChannel  MessageChannel inbound,
+            @OutboundChunkChannel MessageChannel outbound) {
         return IntegrationFlow
                 .from(outbound)
                 .handle(message -> {
