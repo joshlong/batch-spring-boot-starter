@@ -1,13 +1,13 @@
 package com.example.batch;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.joshlong.batch.remotechunking.leader.ChunkingItemWriter;
-import com.joshlong.batch.remotechunking.leader.ChunkingStep;
-import com.joshlong.batch.remotechunking.leader.InboundChunkChannel;
-import com.joshlong.batch.remotechunking.leader.OutboundChunkChannel;
+import com.joshlong.batch.remotechunking.InboundChunkChannel;
+import com.joshlong.batch.remotechunking.OutboundChunkChannel;
+import com.joshlong.batch.remotechunking.leader.LeaderChunkStep;
+import com.joshlong.batch.remotechunking.leader.LeaderItemWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -20,7 +20,6 @@ import org.springframework.batch.item.support.ListItemReader;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.amqp.dsl.Amqp;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.messaging.MessageChannel;
@@ -42,10 +41,10 @@ public class LeaderNodeApplication {
     }
 
     @Bean
-    @ChunkingStep
+    @LeaderChunkStep
     TaskletStep step(JobRepository repository,
                      PlatformTransactionManager transactionManager,
-                     @ChunkingItemWriter ItemWriter<String> itemWriter) {
+                     @LeaderItemWriter ItemWriter<String> itemWriter) {
         var listItemReader = new ListItemReader<>(List.of(new Customer("Dr. Syer"), new Customer("Michael"), new Customer("Mahmoud")));
         return new StepBuilder("step", repository)
                 .<Customer, String>chunk(100, transactionManager)

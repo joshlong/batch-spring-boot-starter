@@ -24,6 +24,7 @@ ext {
 }
 
 dependencies {
+    implementation project(path: ":autoconfiguration")
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
     implementation 'org.springframework.boot:spring-boot-starter-integration'
     implementation 'org.springframework.integration:spring-integration-amqp'

@@ -1,9 +1,9 @@
 package com.example.batch;
 
-import com.joshlong.batch.remotechunking.ChunkItemProcessor;
-import com.joshlong.batch.remotechunking.ChunkItemWriter;
 import com.joshlong.batch.remotechunking.InboundChunkChannel;
 import com.joshlong.batch.remotechunking.OutboundChunkChannel;
+import com.joshlong.batch.remotechunking.worker.WorkerChunkItemProcessor;
+import com.joshlong.batch.remotechunking.worker.WorkerChunkItemWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.AmqpTemplate;
@@ -29,16 +29,13 @@ public class WorkerNodeApplication {
     }
 
     @Bean
-    @ChunkItemProcessor
+    @WorkerChunkItemProcessor
     ItemProcessor<Object, Object> itemProcessor() {
-        return item -> {
-            log.info("processing {}", item);
-            return item;
-        };
+        return item -> item;
     }
 
     @Bean
-    @ChunkItemWriter
+    @WorkerChunkItemWriter
     ItemWriter<Object> itemWriter() {
         return chunk -> {
             //
