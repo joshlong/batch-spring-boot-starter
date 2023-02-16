@@ -1,2 +1,3 @@
+com.joshlong.batch.remotechunking.ChunkAutoConfiguration
 com.joshlong.batch.remotechunking.leader.LeaderChunkAutoConfiguration
 com.joshlong.batch.remotechunking.worker.WorkerChunkAutoConfiguration

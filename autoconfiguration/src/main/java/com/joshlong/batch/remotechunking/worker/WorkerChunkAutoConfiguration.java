@@ -28,23 +28,23 @@ class WorkerChunkAutoConfiguration {
 
     @Bean
     @InboundChunkChannel
-    DirectChannel inboundMessageChannel() {
+    DirectChannel workerRequestsMessageChannel() {
         return MessageChannels.direct().get();
     }
 
     @Bean
     @OutboundChunkChannel
-    DirectChannel outboundMessageChannel() {
+    DirectChannel workerRepliesMessageChannel() {
         return MessageChannels.direct().get();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    ChunkProcessorChunkHandler<?> chunkProcessorChunkHandler(
+    ChunkProcessorChunkHandler<?> workerChunkProcessorChunkHandler(
             // todo make this optional
 //            @WorkerChunkingItemProcessor ObjectProvider<ItemProcessor<Object, Object>> processor,
             @WorkerChunkItemProcessor ItemProcessor<Object, Object> processor,
-            @WorkerChunkItemWriter ItemWriter<Object> writer) throws Exception {
+            @WorkerChunkItemWriter ItemWriter<Object> writer)  {
         var chunkProcessorChunkHandler = new ChunkProcessorChunkHandler<>();
         chunkProcessorChunkHandler.setChunkProcessor(new SimpleChunkProcessor<>(processor, writer));
         return chunkProcessorChunkHandler;
@@ -54,10 +54,9 @@ class WorkerChunkAutoConfiguration {
     @SuppressWarnings("unchecked")
     IntegrationFlow chunkProcessorChunkHandlerIntegrationFlow(
             ChunkProcessorChunkHandler<Object> chunkProcessorChunkHandler,
-            @OutboundChunkChannel MessageChannel outbound)
-            throws Exception {
+            @OutboundChunkChannel MessageChannel outbound) {
         return IntegrationFlow
-                .from(inboundMessageChannel())
+                .from(workerRequestsMessageChannel())
                 .handle(message -> {
                     try {
                         var payload = message.getPayload();

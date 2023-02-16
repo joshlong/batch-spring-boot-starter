@@ -23,9 +23,11 @@ import org.springframework.messaging.MessageChannel;
 @ConditionalOnProperty(value = "bootiful.batch.chunk.leader", havingValue = "true")
 class LeaderChunkAutoConfiguration {
 
+    private final static String MESSAGING_TEMPLATE_BEAN_NAME = "leaderChunkMessagingTemplate";
+
     @Bean
     @ConditionalOnMissingBean
-    @Qualifier("leaderChunkMessagingTemplate")
+    @Qualifier(MESSAGING_TEMPLATE_BEAN_NAME)
     MessagingTemplate leaderChunkMessagingTemplate(@OutboundChunkChannel MessageChannel channel) {
         var template = new MessagingTemplate();
         template.setDefaultChannel(channel);
@@ -37,7 +39,7 @@ class LeaderChunkAutoConfiguration {
     @ConditionalOnMissingBean
     RemoteChunkHandlerFactoryBean<Object> leaderChunkHandler(
             ChunkMessageChannelItemWriter<Object> chunkMessageChannelItemWriterProxy,
-            @LeaderChunkStep TaskletStep step)  {
+            @LeaderChunkStep TaskletStep step) {
         var remoteChunkHandlerFactoryBean = new RemoteChunkHandlerFactoryBean<>();
         remoteChunkHandlerFactoryBean.setChunkWriter(chunkMessageChannelItemWriterProxy);
         remoteChunkHandlerFactoryBean.setStep(step);
@@ -48,8 +50,8 @@ class LeaderChunkAutoConfiguration {
     @LeaderItemWriter
     @StepScope
     @ConditionalOnMissingBean
-    ChunkMessageChannelItemWriter<?> chunkMessageChannelItemWriter(
-            @Qualifier("remoteChunkMessagingTemplate") MessagingTemplate template) {
+    ChunkMessageChannelItemWriter<?> leaderChunkMessageChannelItemWriter(
+            @Qualifier(MESSAGING_TEMPLATE_BEAN_NAME) MessagingTemplate template) {
         var chunkMessageChannelItemWriter = new ChunkMessageChannelItemWriter<>();
         chunkMessageChannelItemWriter.setMessagingOperations(template);
         chunkMessageChannelItemWriter.setReplyChannel(leaderRepliesMessageChannel());
