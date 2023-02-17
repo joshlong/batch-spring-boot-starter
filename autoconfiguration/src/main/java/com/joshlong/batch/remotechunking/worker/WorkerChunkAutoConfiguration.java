@@ -1,7 +1,5 @@
 package com.joshlong.batch.remotechunking.worker;
 
-import com.joshlong.batch.remotechunking.InboundChunkChannel;
-import com.joshlong.batch.remotechunking.OutboundChunkChannel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.step.item.SimpleChunkProcessor;
 import org.springframework.batch.integration.chunk.ChunkProcessorChunkHandler;
@@ -25,13 +23,13 @@ import org.springframework.util.Assert;
 class WorkerChunkAutoConfiguration {
 
 	@Bean
-	@InboundChunkChannel
+	@WorkerInboundChunkChannel
 	DirectChannel workerRequestsMessageChannel() {
 		return MessageChannels.direct().get();
 	}
 
 	@Bean
-	@OutboundChunkChannel
+	@WorkerOutboundChunkChannel
 	DirectChannel workerRepliesMessageChannel() {
 		return MessageChannels.direct().get();
 	}
@@ -53,20 +51,24 @@ class WorkerChunkAutoConfiguration {
 	@SuppressWarnings("unchecked")
 	IntegrationFlow chunkProcessorChunkHandlerIntegrationFlow(
 			ChunkProcessorChunkHandler<Object> chunkProcessorChunkHandler,
-			@OutboundChunkChannel MessageChannel outbound) {
-		return IntegrationFlow.from(workerRequestsMessageChannel()).handle(message -> {
-			try {
-				var payload = message.getPayload();
-				if (payload instanceof ChunkRequest<?> cr) {
-					var chunkResponse = chunkProcessorChunkHandler.handleChunk((ChunkRequest<Object>) cr);
-					outbound.send(MessageBuilder.withPayload(chunkResponse).build());
-				}
-				Assert.state(payload instanceof ChunkRequest<?>, "the payload must be an instance of ChunkRequest!");
-			} //
-			catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-		}).get();
+			@WorkerInboundChunkChannel MessageChannel inbound, @WorkerOutboundChunkChannel MessageChannel outbound) {
+		return IntegrationFlow//
+				.from(inbound)//
+				.handle(message -> {
+					try {
+						var payload = message.getPayload();
+						if (payload instanceof ChunkRequest<?> cr) {
+							var chunkResponse = chunkProcessorChunkHandler.handleChunk((ChunkRequest<Object>) cr);
+							outbound.send(MessageBuilder.withPayload(chunkResponse).build());
+						}
+						Assert.state(payload instanceof ChunkRequest<?>,
+								"the payload must be an instance of ChunkRequest!");
+					} //
+					catch (Exception e) {
+						throw new RuntimeException(e);
+					}
+				})//
+				.get();
 	}
 
 }

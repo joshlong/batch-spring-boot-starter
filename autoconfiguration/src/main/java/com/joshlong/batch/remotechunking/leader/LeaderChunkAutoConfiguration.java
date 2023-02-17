@@ -1,7 +1,5 @@
 package com.joshlong.batch.remotechunking.leader;
 
-import com.joshlong.batch.remotechunking.InboundChunkChannel;
-import com.joshlong.batch.remotechunking.OutboundChunkChannel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.step.tasklet.TaskletStep;
@@ -17,6 +15,7 @@ import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.core.MessagingTemplate;
 import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.PollableChannel;
 
 @Slf4j
 @Configuration
@@ -26,11 +25,23 @@ class LeaderChunkAutoConfiguration {
 	private final static String MESSAGING_TEMPLATE_BEAN_NAME = "leaderChunkMessagingTemplate";
 
 	@Bean
+	@LeaderOutboundChunkChannel
+	DirectChannel leaderRequestsMessageChannel() {
+		return MessageChannels.direct().get();
+	}
+
+	@Bean
+	@LeaderInboundChunkChannel
+	QueueChannel leaderRepliesMessageChannel() {
+		return MessageChannels.queue().get();
+	}
+
+	@Bean
 	@ConditionalOnMissingBean
 	@Qualifier(MESSAGING_TEMPLATE_BEAN_NAME)
-	MessagingTemplate leaderChunkMessagingTemplate(@OutboundChunkChannel MessageChannel channel) {
+	MessagingTemplate leaderChunkMessagingTemplate() {
 		var template = new MessagingTemplate();
-		template.setDefaultChannel(channel);
+		template.setDefaultChannel(leaderRequestsMessageChannel());
 		template.setReceiveTimeout(2000);
 		return template;
 	}
@@ -56,20 +67,6 @@ class LeaderChunkAutoConfiguration {
 		chunkMessageChannelItemWriter.setMessagingOperations(template);
 		chunkMessageChannelItemWriter.setReplyChannel(leaderRepliesMessageChannel());
 		return chunkMessageChannelItemWriter;
-	}
-
-	@Bean
-	@ConditionalOnMissingBean
-	@OutboundChunkChannel
-	DirectChannel leaderRequestsMessageChannel() {
-		return MessageChannels.direct().get();
-	}
-
-	@Bean
-	@ConditionalOnMissingBean
-	@InboundChunkChannel
-	QueueChannel leaderRepliesMessageChannel() {
-		return MessageChannels.queue().get();
 	}
 
 }

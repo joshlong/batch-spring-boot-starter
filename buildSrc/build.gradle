@@ -10,7 +10,4 @@ dependencies {
     implementation "io.spring.gradle:dependency-management-plugin:1.1.0"
     implementation "org.springframework.boot:spring-boot-gradle-plugin:3.0.2"
     implementation 'io.spring.javaformat:spring-javaformat-gradle-plugin:0.0.35'
-
-
-//    implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:5.0.12'
 }

@@ -1,13 +1,4 @@
-plugins {
-    id 'bootiful-conventions'
-    id 'org.springframework.boot'
-
+plugins  {
+    id 'app-conventions'
 }
 
-dependencies {
-    implementation project(path: ":autoconfiguration")
-    implementation 'org.springframework.boot:spring-boot-starter-json'
-    runtimeOnly 'org.postgresql:postgresql'
-    implementation 'org.springframework.boot:spring-boot-starter-amqp'
-    implementation 'org.springframework.integration:spring-integration-amqp'
-}

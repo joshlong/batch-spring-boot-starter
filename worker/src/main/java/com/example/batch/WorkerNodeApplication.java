@@ -1,9 +1,9 @@
 package com.example.batch;
 
-import com.joshlong.batch.remotechunking.InboundChunkChannel;
-import com.joshlong.batch.remotechunking.OutboundChunkChannel;
 import com.joshlong.batch.remotechunking.worker.WorkerChunkItemProcessor;
 import com.joshlong.batch.remotechunking.worker.WorkerChunkItemWriter;
+import com.joshlong.batch.remotechunking.worker.WorkerInboundChunkChannel;
+import com.joshlong.batch.remotechunking.worker.WorkerOutboundChunkChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.AmqpTemplate;
@@ -47,17 +47,21 @@ public class WorkerNodeApplication {
 	}
 
 	@Bean
-	IntegrationFlow inboundAmqpIntegrationFlow(@InboundChunkChannel MessageChannel inboundMessageChannel,
+	IntegrationFlow inboundAmqpIntegrationFlow(@WorkerInboundChunkChannel MessageChannel workerRequestsMessageChannel,
 			ConnectionFactory connectionFactory) {
-		return IntegrationFlow.from(Amqp.inboundAdapter(connectionFactory, "requests")).channel(inboundMessageChannel)
+		return IntegrationFlow//
+				.from(Amqp.inboundAdapter(connectionFactory, "requests"))//
+				.channel(workerRequestsMessageChannel)//
 				.get();
 	}
 
 	@Bean
-	IntegrationFlow outboundAmqpIntegrationFlow(@OutboundChunkChannel MessageChannel outboundMessageChannel,
+	IntegrationFlow outboundAmqpIntegrationFlow(@WorkerOutboundChunkChannel MessageChannel workerRepliesMessageChannel,
 			AmqpTemplate template) {
 		return IntegrationFlow //
-				.from(outboundMessageChannel).handle(Amqp.outboundAdapter(template).routingKey("replies")).get();
+				.from(workerRepliesMessageChannel)//
+				.handle(Amqp.outboundAdapter(template).routingKey("replies"))//
+				.get();
 	}
 
 }

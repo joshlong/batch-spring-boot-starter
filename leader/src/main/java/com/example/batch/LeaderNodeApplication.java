@@ -1,10 +1,10 @@
 package com.example.batch;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.joshlong.batch.remotechunking.InboundChunkChannel;
-import com.joshlong.batch.remotechunking.OutboundChunkChannel;
 import com.joshlong.batch.remotechunking.leader.LeaderChunkStep;
+import com.joshlong.batch.remotechunking.leader.LeaderInboundChunkChannel;
 import com.joshlong.batch.remotechunking.leader.LeaderItemWriter;
+import com.joshlong.batch.remotechunking.leader.LeaderOutboundChunkChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.amqp.core.AmqpTemplate;
@@ -12,6 +12,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.core.step.tasklet.TaskletStep;
@@ -45,25 +46,35 @@ public class LeaderNodeApplication {
 	TaskletStep step(JobRepository repository, PlatformTransactionManager transactionManager,
 			@LeaderItemWriter ItemWriter<String> itemWriter) {
 		var listItemReader = new ListItemReader<>(
-				List.of(new Customer("Dr. Syer"), new Customer("Michael"), new Customer("Mahmoud")));
-		return new StepBuilder("step", repository).<Customer, String>chunk(100, transactionManager)
-				.reader(listItemReader).processor(this::jsonFor).writer(itemWriter).build();
+				List.of(new Customer("Dave"), new Customer("Michael"), new Customer("Mahmoud")));
+		return new StepBuilder("step", repository)//
+				.<Customer, String>chunk(100, transactionManager)//
+				.reader(listItemReader)//
+				.processor(this::jsonFor)//
+				.writer(itemWriter)//
+				.build();
 	}
 
 	@Bean
-	IntegrationFlow outboundIntegrationFlow(@OutboundChunkChannel MessageChannel out, AmqpTemplate amqpTemplate) {
+	IntegrationFlow outboundIntegrationFlow(@LeaderOutboundChunkChannel MessageChannel out, AmqpTemplate amqpTemplate) {
 		return IntegrationFlow //
-				.from(out).handle(Amqp.outboundAdapter(amqpTemplate).routingKey("requests")).get();
+				.from(out).handle(Amqp.outboundAdapter(amqpTemplate).routingKey("requests"))//
+				.get();
 	}
 
 	@Bean
-	IntegrationFlow inboundIntegrationFlow(ConnectionFactory cf, @InboundChunkChannel MessageChannel in) {
-		return IntegrationFlow.from(Amqp.inboundAdapter(cf, "replies")).channel(in).get();
+	IntegrationFlow inboundIntegrationFlow(ConnectionFactory cf, @LeaderInboundChunkChannel MessageChannel in) {
+		return IntegrationFlow.from(Amqp.inboundAdapter(cf, "replies"))//
+				.channel(in)//
+				.get();
 	}
 
 	@Bean
 	Job job(JobRepository repository, Step step) {
-		return new JobBuilder("job", repository).start(step).build();
+		return new JobBuilder("job", repository)//
+				.start(step)//
+				.incrementer(new RunIdIncrementer())//
+				.build();
 	}
 
 	@SneakyThrows
