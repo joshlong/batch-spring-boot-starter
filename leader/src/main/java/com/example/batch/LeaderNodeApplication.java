@@ -58,13 +58,15 @@ public class LeaderNodeApplication {
 	@Bean
 	IntegrationFlow outboundIntegrationFlow(@LeaderOutboundChunkChannel MessageChannel out, AmqpTemplate amqpTemplate) {
 		return IntegrationFlow //
-				.from(out).handle(Amqp.outboundAdapter(amqpTemplate).routingKey("requests"))//
+				.from(out)//
+				.handle(Amqp.outboundAdapter(amqpTemplate).routingKey("requests"))//
 				.get();
 	}
 
 	@Bean
 	IntegrationFlow inboundIntegrationFlow(ConnectionFactory cf, @LeaderInboundChunkChannel MessageChannel in) {
-		return IntegrationFlow.from(Amqp.inboundAdapter(cf, "replies"))//
+		return IntegrationFlow//
+				.from(Amqp.inboundAdapter(cf, "replies"))//
 				.channel(in)//
 				.get();
 	}
