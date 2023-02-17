@@ -23,55 +23,53 @@ import org.springframework.messaging.MessageChannel;
 @ConditionalOnProperty(value = "bootiful.batch.chunk.leader", havingValue = "true")
 class LeaderChunkAutoConfiguration {
 
-    private final static String MESSAGING_TEMPLATE_BEAN_NAME = "leaderChunkMessagingTemplate";
+	private final static String MESSAGING_TEMPLATE_BEAN_NAME = "leaderChunkMessagingTemplate";
 
-    @Bean
-    @ConditionalOnMissingBean
-    @Qualifier(MESSAGING_TEMPLATE_BEAN_NAME)
-    MessagingTemplate leaderChunkMessagingTemplate(@OutboundChunkChannel MessageChannel channel) {
-        var template = new MessagingTemplate();
-        template.setDefaultChannel(channel);
-        template.setReceiveTimeout(2000);
-        return template;
-    }
+	@Bean
+	@ConditionalOnMissingBean
+	@Qualifier(MESSAGING_TEMPLATE_BEAN_NAME)
+	MessagingTemplate leaderChunkMessagingTemplate(@OutboundChunkChannel MessageChannel channel) {
+		var template = new MessagingTemplate();
+		template.setDefaultChannel(channel);
+		template.setReceiveTimeout(2000);
+		return template;
+	}
 
-    @Bean
-    @ConditionalOnMissingBean
-    RemoteChunkHandlerFactoryBean<Object> leaderChunkHandler(
-            ChunkMessageChannelItemWriter<Object> chunkMessageChannelItemWriterProxy,
-            @LeaderChunkStep TaskletStep step) {
-        var remoteChunkHandlerFactoryBean = new RemoteChunkHandlerFactoryBean<>();
-        remoteChunkHandlerFactoryBean.setChunkWriter(chunkMessageChannelItemWriterProxy);
-        remoteChunkHandlerFactoryBean.setStep(step);
-        return remoteChunkHandlerFactoryBean;
-    }
+	@Bean
+	@ConditionalOnMissingBean
+	RemoteChunkHandlerFactoryBean<Object> leaderChunkHandler(
+			ChunkMessageChannelItemWriter<Object> chunkMessageChannelItemWriterProxy,
+			@LeaderChunkStep TaskletStep step) {
+		var remoteChunkHandlerFactoryBean = new RemoteChunkHandlerFactoryBean<>();
+		remoteChunkHandlerFactoryBean.setChunkWriter(chunkMessageChannelItemWriterProxy);
+		remoteChunkHandlerFactoryBean.setStep(step);
+		return remoteChunkHandlerFactoryBean;
+	}
 
-    @Bean
-    @LeaderItemWriter
-    @StepScope
-    @ConditionalOnMissingBean
-    ChunkMessageChannelItemWriter<?> leaderChunkMessageChannelItemWriter(
-            @Qualifier(MESSAGING_TEMPLATE_BEAN_NAME) MessagingTemplate template) {
-        var chunkMessageChannelItemWriter = new ChunkMessageChannelItemWriter<>();
-        chunkMessageChannelItemWriter.setMessagingOperations(template);
-        chunkMessageChannelItemWriter.setReplyChannel(leaderRepliesMessageChannel());
-        return chunkMessageChannelItemWriter;
-    }
+	@Bean
+	@LeaderItemWriter
+	@StepScope
+	@ConditionalOnMissingBean
+	ChunkMessageChannelItemWriter<?> leaderChunkMessageChannelItemWriter(
+			@Qualifier(MESSAGING_TEMPLATE_BEAN_NAME) MessagingTemplate template) {
+		var chunkMessageChannelItemWriter = new ChunkMessageChannelItemWriter<>();
+		chunkMessageChannelItemWriter.setMessagingOperations(template);
+		chunkMessageChannelItemWriter.setReplyChannel(leaderRepliesMessageChannel());
+		return chunkMessageChannelItemWriter;
+	}
 
-    @Bean
-    @ConditionalOnMissingBean
-    @OutboundChunkChannel
-    DirectChannel leaderRequestsMessageChannel() {
-        return MessageChannels.direct().get();
-    }
+	@Bean
+	@ConditionalOnMissingBean
+	@OutboundChunkChannel
+	DirectChannel leaderRequestsMessageChannel() {
+		return MessageChannels.direct().get();
+	}
 
-    @Bean
-    @ConditionalOnMissingBean
-    @InboundChunkChannel
-    QueueChannel leaderRepliesMessageChannel() {
-        return MessageChannels.queue().get();
-    }
+	@Bean
+	@ConditionalOnMissingBean
+	@InboundChunkChannel
+	QueueChannel leaderRepliesMessageChannel() {
+		return MessageChannels.queue().get();
+	}
+
 }
-
-
-

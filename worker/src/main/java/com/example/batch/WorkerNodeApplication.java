@@ -24,47 +24,40 @@ import java.util.List;
 @SpringBootApplication
 public class WorkerNodeApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(WorkerNodeApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(WorkerNodeApplication.class, args);
+	}
 
-    @Bean
-    @WorkerChunkItemProcessor
-    ItemProcessor<Object, Object> itemProcessor() {
-        return item -> item;
-    }
+	@Bean
+	@WorkerChunkItemProcessor
+	ItemProcessor<Object, Object> itemProcessor() {
+		return item -> item;
+	}
 
-    @Bean
-    @WorkerChunkItemWriter
-    ItemWriter<Object> itemWriter() {
-        return chunk -> {
-            //
-            log.info("doing the long-running writing thing");
-            List<?> items = chunk.getItems();
-            for (var i : items)
-                log.info("i={}", i + "");
-        };
-    }
+	@Bean
+	@WorkerChunkItemWriter
+	ItemWriter<Object> itemWriter() {
+		return chunk -> {
+			//
+			log.info("doing the long-running writing thing");
+			List<?> items = chunk.getItems();
+			for (var i : items)
+				log.info("i={}", i + "");
+		};
+	}
 
-    @Bean
-    IntegrationFlow inboundAmqpIntegrationFlow(
-            @InboundChunkChannel MessageChannel inboundMessageChannel,
-            ConnectionFactory connectionFactory) {
-        return IntegrationFlow
-                .from(Amqp.inboundAdapter(connectionFactory, "requests"))
-                .channel(inboundMessageChannel)
-                .get();
-    }
+	@Bean
+	IntegrationFlow inboundAmqpIntegrationFlow(@InboundChunkChannel MessageChannel inboundMessageChannel,
+			ConnectionFactory connectionFactory) {
+		return IntegrationFlow.from(Amqp.inboundAdapter(connectionFactory, "requests")).channel(inboundMessageChannel)
+				.get();
+	}
 
-    @Bean
-    IntegrationFlow outboundAmqpIntegrationFlow(
-            @OutboundChunkChannel MessageChannel outboundMessageChannel,
-            AmqpTemplate template) {
-        return IntegrationFlow //
-                .from(outboundMessageChannel)
-                .handle(Amqp.outboundAdapter(template).routingKey("replies"))
-                .get();
-    }
-
+	@Bean
+	IntegrationFlow outboundAmqpIntegrationFlow(@OutboundChunkChannel MessageChannel outboundMessageChannel,
+			AmqpTemplate template) {
+		return IntegrationFlow //
+				.from(outboundMessageChannel).handle(Amqp.outboundAdapter(template).routingKey("replies")).get();
+	}
 
 }
