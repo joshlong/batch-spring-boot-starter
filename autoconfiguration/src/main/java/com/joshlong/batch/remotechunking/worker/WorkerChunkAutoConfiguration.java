@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.MessageChannels;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 
@@ -36,30 +35,29 @@ class WorkerChunkAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
+	@SuppressWarnings("unchecked")
 	ChunkProcessorChunkHandler<?> workerChunkProcessorChunkHandler(
 			// todo make this optional
 			// @WorkerChunkingItemProcessor ObjectProvider<ItemProcessor<Object, Object>>
 			// processor,
-			@WorkerChunkItemProcessor ItemProcessor<Object, Object> processor,
-			@WorkerChunkItemWriter ItemWriter<Object> writer) {
+			@WorkerItemProcessor ItemProcessor<?, ?> processor, @WorkerItemWriter ItemWriter<?> writer) {
 		var chunkProcessorChunkHandler = new ChunkProcessorChunkHandler<>();
-		chunkProcessorChunkHandler.setChunkProcessor(new SimpleChunkProcessor<>(processor, writer));
+		chunkProcessorChunkHandler.setChunkProcessor(new SimpleChunkProcessor(processor, writer));
 		return chunkProcessorChunkHandler;
 	}
 
 	@Bean
 	@SuppressWarnings("unchecked")
 	IntegrationFlow chunkProcessorChunkHandlerIntegrationFlow(
-			ChunkProcessorChunkHandler<Object> chunkProcessorChunkHandler,
-			@WorkerInboundChunkChannel MessageChannel inbound, @WorkerOutboundChunkChannel MessageChannel outbound) {
+			ChunkProcessorChunkHandler<Object> chunkProcessorChunkHandler) {
 		return IntegrationFlow//
-				.from(inbound)//
+				.from(workerRequestsMessageChannel())//
 				.handle(message -> {
 					try {
 						var payload = message.getPayload();
 						if (payload instanceof ChunkRequest<?> cr) {
 							var chunkResponse = chunkProcessorChunkHandler.handleChunk((ChunkRequest<Object>) cr);
-							outbound.send(MessageBuilder.withPayload(chunkResponse).build());
+							workerRepliesMessageChannel().send(MessageBuilder.withPayload(chunkResponse).build());
 						}
 						Assert.state(payload instanceof ChunkRequest<?>,
 								"the payload must be an instance of ChunkRequest!");

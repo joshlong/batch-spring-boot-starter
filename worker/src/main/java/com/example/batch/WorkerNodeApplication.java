@@ -1,7 +1,7 @@
 package com.example.batch;
 
-import com.joshlong.batch.remotechunking.worker.WorkerChunkItemProcessor;
-import com.joshlong.batch.remotechunking.worker.WorkerChunkItemWriter;
+import com.joshlong.batch.remotechunking.worker.WorkerItemProcessor;
+import com.joshlong.batch.remotechunking.worker.WorkerItemWriter;
 import com.joshlong.batch.remotechunking.worker.WorkerInboundChunkChannel;
 import com.joshlong.batch.remotechunking.worker.WorkerOutboundChunkChannel;
 import lombok.RequiredArgsConstructor;
@@ -29,13 +29,13 @@ public class WorkerNodeApplication {
 	}
 
 	@Bean
-	@WorkerChunkItemProcessor
+	@WorkerItemProcessor
 	ItemProcessor<Object, Object> itemProcessor() {
 		return item -> item;
 	}
 
 	@Bean
-	@WorkerChunkItemWriter
+	@WorkerItemWriter
 	ItemWriter<Object> itemWriter() {
 		return chunk -> {
 			//

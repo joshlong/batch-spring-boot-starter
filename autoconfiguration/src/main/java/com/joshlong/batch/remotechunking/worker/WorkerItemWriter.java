@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 @Inherited
 @Documented
 @Qualifier
-public @interface WorkerChunkItemProcessor {
+public @interface WorkerItemWriter {
 
 	@AliasFor(annotation = Qualifier.class)
 	String value() default "";

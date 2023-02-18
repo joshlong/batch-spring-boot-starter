@@ -60,7 +60,6 @@ class LeaderChunkAutoConfiguration {
 	@Bean
 	@LeaderItemWriter
 	@StepScope
-	@ConditionalOnMissingBean
 	ChunkMessageChannelItemWriter<?> leaderChunkMessageChannelItemWriter(
 			@Qualifier(MESSAGING_TEMPLATE_BEAN_NAME) MessagingTemplate template) {
 		var chunkMessageChannelItemWriter = new ChunkMessageChannelItemWriter<>();
