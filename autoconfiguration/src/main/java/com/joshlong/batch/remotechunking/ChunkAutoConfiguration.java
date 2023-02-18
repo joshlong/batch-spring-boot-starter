@@ -36,14 +36,20 @@ class ChunkAutoConfiguration {
 		public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
 			var classLiterals = Set.of(
 					// batch
-					ChunkRequest.class, ExitStatus.class, StepContribution.class, JobExecution.class, Entity.class,
-					ExecutionContext.class, StepExecution.class, ChunkResponse.class, Chunk.class, JobInstance.class,
+					org.springframework.batch.core.JobParameters.class,
+					org.springframework.batch.core.JobParameter.class, ChunkRequest.class, ExitStatus.class,
+					StepContribution.class, JobExecution.class, Entity.class, ExecutionContext.class,
+					StepExecution.class, ChunkResponse.class, Chunk.class, JobInstance.class,
+
 					// jdk
+
+					java.util.LinkedHashSet.class, java.util.LinkedHashMap.class, java.util.HashSet.class,
 					ReentrantLock.class, ConcurrentHashMap.class, AbstractOwnableSynchronizer.class,
 					AbstractQueuedSynchronizer.class);
 			var classStrings = Set.of(
 					// jdk
-					"java.util.concurrent.locks.ReentrantLock$Sync",
+					"java.time.Ser", "java.util.Collections$SynchronizedSet",
+					"java.util.Collections$SynchronizedCollection", "java.util.concurrent.locks.ReentrantLock$Sync",
 					"java.util.concurrent.locks.ReentrantLock$FairSync",
 					"java.util.concurrent.locks.ReentrantLock$NonfairSync",
 					"java.util.concurrent.ConcurrentHashMap$Segment");
@@ -54,6 +60,7 @@ class ChunkAutoConfiguration {
 			var typeReferences = all.stream().map(TypeReference::of).collect(Collectors.toSet());
 			typeReferences.forEach(c -> hints.serialization().registerType(c));
 			typeReferences.forEach(c -> hints.reflection().registerType(c, MemberCategory.values()));
+
 		}
 
 	}
